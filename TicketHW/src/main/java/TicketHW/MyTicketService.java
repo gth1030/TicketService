@@ -18,7 +18,7 @@ public class MyTicketService implements TicketService{
      */
     public MyTicketService(String name) {
         eventName = name;
-        threadMap = new HashMap<Integer, Thread>();
+        threadMap = new HashMap<Integer, TimeThread>();
         Collections.synchronizedMap(threadMap);
         customerInfo = new HashMap<Integer, String>();
         Collections.synchronizedMap(customerInfo);
@@ -28,6 +28,7 @@ public class MyTicketService implements TicketService{
         for (int i = 0; i < 4; i++) {
             seatManagers.put(i, new SeatManager(i + 1, getSizeLC(i + 1)));
         }
+        reservations = new HashMap<>();
     }
 
 
@@ -40,6 +41,7 @@ public class MyTicketService implements TicketService{
      */
     public String reserveSeats(int seatHoldId, String customerEmail) {
         threadMap.get(seatHoldId).interrupt();
+        reservations.put(seatHoldId, threadMap.get(seatHoldId).getHeldSeats());
         threadMap.remove((seatHoldId));
         return Integer.toString(seatHoldId);
     }
@@ -74,7 +76,7 @@ public class MyTicketService implements TicketService{
             updateTicketState(availSeatHold, customerEmail);
         }
         SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(returnedSeatBundles);
-        Thread timer = new TimeThread(availSeatHold, returnedSeatBundles, this);
+        TimeThread timer = new TimeThread(availSeatHold, returnedSeatBundles, this);
         threadMap.put(availSeatHold.get().get(0).seatID(), timer);
         timer.start();
         return availSeatHold;
@@ -214,7 +216,7 @@ public class MyTicketService implements TicketService{
      * Returns object containing information about currently held tickets.
      * @return container for currently held tickets
      */
-    public HashMap<Integer, Thread> getThreadMap() { return threadMap; }
+    public HashMap<Integer, TimeThread> getThreadMap() { return threadMap; }
 
     /**
      * Returns event name
@@ -242,7 +244,7 @@ public class MyTicketService implements TicketService{
      * Hashmap that contains information of tickets that are currently held. Key equals seatID of first seat(seat with
      * the smallest seatID) and values are individual thread that deals with each holding.
      */
-    HashMap<Integer, Thread> threadMap;
+    HashMap<Integer, TimeThread> threadMap;
 
     /**
      * Integer array that contains information about number of available seats for each level. Formats are available
@@ -270,5 +272,9 @@ public class MyTicketService implements TicketService{
      */
     HashMap<Integer, SeatManager> seatManagers;
 
+    /**
+     * Saved Reservations.
+     */
+    HashMap<Integer, ArrayList<Seat>> reservations;
 }
 

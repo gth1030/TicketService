@@ -25,6 +25,12 @@ public class TimeThread extends Thread{
         service = myService;
     }
 
+    /**
+     * Returns seats held on this reservation.
+     * @return return arraylist of held seats.
+     */
+    ArrayList<Seat> getHeldSeats() {return holdings; }
+
 
     /**
      * Run function of timerThread that will start count down for holding expiration. If the function is not interrupted

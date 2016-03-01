@@ -23,7 +23,7 @@ public class SeatBundleTest {
         SeatBundle obj2 = new SeatBundle(1, 3);
         assertEquals(obj1.getSizeOfBundle(), queue.poll().getSizeOfBundle());
         assertEquals(obj2.getRowNumber(), queue.peek().getRowNumber());
-        assertEquals(obj2.getSizeOfBundle(), queue.poll().getSizeOfBundle());
+        assertEquals(obj2.getSizeOfBundle(), queue.peek().getSizeOfBundle());
     }
 
 

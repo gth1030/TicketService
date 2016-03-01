@@ -22,7 +22,7 @@ public class MyServiceTest2 {
         serviceOj1.reserveSeats(1, "aa");
         seatHold = serviceOj1.findAndHoldSeats(20, 1, 2, "aa");
         serviceOj1.reserveSeats(1221, "aa");
-        seatHold = serviceOj1.findAndHoldSeats(1240, 2, 2, "aa");
+        seatHold = serviceOj1.findAndHoldSeats(1990, 2, 2, "aa");
         serviceOj1.reserveSeats(1251, "aa");
         ArrayList<Seat> seats = seatHold.get();
         ArrayList<Integer> levels = serviceOj1.findLevelForHold(20, 1, 2);
