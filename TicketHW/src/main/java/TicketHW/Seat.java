@@ -21,26 +21,30 @@ public class Seat {
             throw new IllegalArgumentException("level should be between 1 to 4 and all input should be positive");
         }
         switch(level) {
-            case 1: {
+            case 1:
                 if (row > 50 || column > 25) {
-                    throw new IllegalArgumentException("row cannot exceed 50 and column cannot exceed 25 for Orchestra");
+                    throw new IllegalArgumentException("row cannot exceed 50 and column cannot exceed 25 for Orchestra" +
+                            ". The valuese are " + " row = " + row + " column = " + column + " level = " + level);
                 }
-            }
-            case 2: {
+                break;
+            case 2:
                 if (row > 100 || column > 20) {
-                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 20 for Main");
+                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 20 for " +
+                            "Main. The valuese are " + " row = " + row + " column = " + column + " level = " + level);
                 }
-            }
-            case 3: {
+                break;
+            case 3:
                 if (row > 100 || column > 15) {
-                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 15 for Balcony 1");
+                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 15 for" +
+                            " Balcony 1. The valuese are " + " row = " + row + " column = " + column + " level = " + level);
                 }
-            }
-            case 4: {
+                break;
+            case 4:
                 if (row > 100 || column > 15) {
-                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 15 for Balcony 2");
+                    throw new IllegalArgumentException("row cannot exceed 100 and column cannot exceed 15 for " +
+                            "Balcony 2. The valuese are " + " row = " + row + " column = " + column + " level = " + level);
                 }
-            }
+                break;
         }
         rowN = row;
         columnN = column;

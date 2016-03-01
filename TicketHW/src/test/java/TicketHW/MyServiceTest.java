@@ -143,14 +143,14 @@ public class MyServiceTest {
         MyTicketService serviceOj1 = new MyTicketService("Test1");
         SeatHold seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
         try {
-            Thread.sleep(500);
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
         }
         seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
         ArrayList<Seat> seats = seatHold.get();
         assertEquals(1249, serviceOj1.getAvailability()[0]);
         try {
-            Thread.sleep(500);
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
         }
         seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
@@ -172,6 +172,7 @@ public class MyServiceTest {
     public void removeHoldTest() {
         MyTicketService serviceOj1 = new MyTicketService("Test1");
         SeatHold seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
+        seatHold.setSeatHoldID(seatHold.get().get(0).seatID());
         serviceOj1.reserveSeats(seatHold.getSeatHoldID(), "aa");
         ArrayList<Seat> holdings = new ArrayList<>();
         holdings.add(new Seat(1, 1, 1));

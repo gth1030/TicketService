@@ -55,6 +55,11 @@ public class SeatBundle implements Comparable<SeatBundle> {
         if (sizeOfBundle > bundle.getSizeOfBundle()) {
             return -1;
         } else if (sizeOfBundle == bundle.getSizeOfBundle()) {
+            if (getColumnNumber() > bundle.getColumnNumber()) {
+                return 1;
+            } else if (getColumnNumber() < bundle.getColumnNumber()) {
+                return -1;
+            }
             return 0;
         }
         return 1;

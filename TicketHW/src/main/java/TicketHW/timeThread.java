@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * seats from holding state once holding time is expired. Externally interrupting this class will put currently held
  * seats to reserve state.
  */
-public class timeThread extends Thread{
+public class TimeThread extends Thread{
 
     /**
      * Constructor for timerThread. It takes in information about seatHold and the current service being used.
@@ -18,7 +18,7 @@ public class timeThread extends Thread{
      *                 trigger.
      * @param myService The service where timerThread is operating under.
      */
-    public timeThread(SeatHold seatHold, ArrayList<SeatBundle> seatBundle, MyTicketService myService) {
+    public TimeThread(SeatHold seatHold, ArrayList<SeatBundle> seatBundle, MyTicketService myService) {
         super();
         holdings = seatHold.get();
         bundleList = seatBundle;
@@ -35,8 +35,15 @@ public class timeThread extends Thread{
         try {
             Thread.sleep(service.getTimeWaited());
         } catch (InterruptedException e) {
+            return;
         }
-        service.removeHeldTicket(holdings, bundleList);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                service.removeHeldTicket(holdings, bundleList);
+            }
+        });
+        thread.start();
 
     }
 

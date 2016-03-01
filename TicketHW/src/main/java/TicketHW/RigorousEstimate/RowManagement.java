@@ -29,20 +29,21 @@ public class RowManagement {
      *  When held seats are returned to the rowmanagement after expiration of holding time, reaarange needs to be called
      * to combine pieces of seatbundle objects into one if they are adjecent to each other.
      */
-    void rearrage() {
+    synchronized void rearrage() {
         ArrayList<SeatBundle> newRow = new ArrayList<>();
-        for (int i = 0; i < rowInfoArray.size() - 1; i++) {
-            if (rowInfoArray.get(i).getRowNumber() + rowInfoArray.get(i).getSizeOfBundle()
-                    == rowInfoArray.get(i + 1).getRowNumber()) {
-                SeatBundle newBundle = new SeatBundle(rowInfoArray.get(i).getRowNumber(),
-                        rowInfoArray.get(i).getSizeOfBundle() + rowInfoArray.get(i + 1).getSizeOfBundle());
-                rowInfoArray.add(i + 1, newBundle);
-                rowInfoArray.remove(i + 2);
+        ArrayList<SeatBundle> rowInfoCopy = new ArrayList<>(rowInfoArray);
+        for (int i = 0; i < rowInfoCopy.size() - 1; i++) {
+            if (rowInfoCopy.get(i).getRowNumber() + rowInfoCopy.get(i).getSizeOfBundle()
+                    == rowInfoCopy.get(i + 1).getRowNumber()) {
+                SeatBundle newBundle = new SeatBundle(rowInfoCopy.get(i).getRowNumber(),
+                        rowInfoCopy.get(i).getSizeOfBundle() + rowInfoCopy.get(i + 1).getSizeOfBundle());
+                rowInfoCopy.add(i + 1, newBundle);
+                rowInfoCopy.remove(i + 2);
             } else {
-                newRow.add(rowInfoArray.get(i));
+                newRow.add(rowInfoCopy.get(i));
             }
         }
-        newRow.add(rowInfoArray.get(rowInfoArray.size() - 1));
+        newRow.add(rowInfoCopy.get(rowInfoCopy.size() - 1));
         rowInfoArray = newRow;
     }
 
@@ -52,7 +53,7 @@ public class RowManagement {
      */
     SeatBundle getLargestBundle() {
         int max = 0;
-        SeatBundle bundle = null;
+        SeatBundle bundle = new SeatBundle(0, 0 , this);
         for (int i = 0; i < rowInfoArray.size(); i++) {
             if (rowInfoArray.get(i).getSizeOfBundle() > max) {
                 bundle = rowInfoArray.get(i);
@@ -73,11 +74,15 @@ public class RowManagement {
     static SeatBundle reserveBundle(RowManagement rowManagement, int start, int size) {
         for (int i = 0; i < rowManagement.getRowInfoArray().size(); i++) {
             if (rowManagement.getRowInfoArray().get(i).getRowNumber() == start ) {
+                if (rowManagement.getRowInfoArray().get(i).getSizeOfBundle() == size) {
+                    rowManagement.getRowInfoArray().clear();
+                    return new SeatBundle(start, size, rowManagement);
+                }
                 SeatBundle newbundle = new SeatBundle(rowManagement.getRowInfoArray().get(i).getRowNumber() + size,
                         rowManagement.getRowInfoArray().get(i).getSizeOfBundle() - size, rowManagement);
                 rowManagement.getRowInfoArray().remove(i);
                 rowManagement.getRowInfoArray().add(i, newbundle);
-                return rowManagement.getRowInfoArray().get(i);
+                return new SeatBundle(start, size, rowManagement);
             }
         }
         throw new IllegalArgumentException("Rowmanagement is not updated due to wrong input.");
@@ -100,7 +105,7 @@ public class RowManagement {
      * The function adds the seat back into availability once the seat is released from hold without reservation.
      * @param seatBundle Information of seats to be added back to the system for availability.
      */
-    public void add(SeatBundle seatBundle) {
+    public synchronized void add(SeatBundle seatBundle) {
         for (int i = 0; i < rowInfoArray.size(); i ++) {
             if (rowInfoArray.get(i).getRowNumber() < seatBundle.getRowNumber()) {
                 continue;

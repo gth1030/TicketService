@@ -23,15 +23,30 @@ public class MyTicketService implements TicketService{
         customerInfo = new HashMap<Integer, String>();
         Collections.synchronizedMap(customerInfo);
         availability = new int[] {ORCHSIZE[0] * ORCHSIZE[1], MAINSIZE[0] * MAINSIZE[1], BAL1SIZE[0] * BAL1SIZE[1], BAL2SIZE[0] * BAL2SIZE[1]};
-        seatManagers = new ArrayList<>();
-        Collections.synchronizedList(seatManagers);
+        seatManagers = new HashMap<>();
+        Collections.synchronizedMap(seatManagers);
         for (int i = 0; i < 4; i++) {
-            seatManagers.add(i, new SeatManager(i + 1, getSizeLC(i + 1)));
+            seatManagers.put(i, new SeatManager(i + 1, getSizeLC(i + 1)));
         }
     }
 
+
     /**
-     * Find and hold the best available seats for a customer
+     * Commit seats held for a specific customer
+     * @param seatHoldId the seat hold identifier
+     * @param customerEmail the email address of the customer to which the seat hold
+    is assigned
+     * @return a reservation confirmation code
+     */
+    public String reserveSeats(int seatHoldId, String customerEmail) {
+        threadMap.get(seatHoldId).interrupt();
+        threadMap.remove((seatHoldId));
+        return Integer.toString(seatHoldId);
+    }
+
+    /**
+     * Find and hold the best available seats for a customer. Throw illegal argument exception if none of the level has
+     * enough spaces in a single level.
      *
      * @param numSeats the number of seats to find and hold
      * @param minLevel the minimum venue level
@@ -42,19 +57,27 @@ public class MyTicketService implements TicketService{
      */
     public SeatHold findAndHoldSeats(int numSeats, int minLevel,
                                      int maxLevel, String customerEmail) {
-        for (int i = minLevel; i <= maxLevel; i++) {
-            if (numSeatsAvailable(i) >= numSeats) {
-                ArrayList<SeatBundle> seatBundles = seatManagers.get(i - 1).findBestSeat(numSeats);
-                SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(seatBundles);
-                seatManagers.get(i - 1).updateSeatInfo(seatBundles);
-                updateTicketState(availSeatHold, customerEmail);
-                Thread timer = new timeThread(availSeatHold, seatBundles, this);
-                threadMap.put(availSeatHold.get().get(0).seatID(), timer);
-                timer.start();
-                return availSeatHold;
+        ArrayList<Integer> levelToIterate = findLevelForHold(numSeats, minLevel, maxLevel);
+        ArrayList<SeatBundle> returnedSeatBundles = new ArrayList<>();
+        int seatsReservedSoFar = 0;
+        for (int i : levelToIterate) {
+            ArrayList<SeatBundle> seatBundles = null;
+            if (i == levelToIterate.get(levelToIterate.size() - 1)) {
+                seatBundles = seatManagers.get(i - 1).findBestSeat(numSeats - seatsReservedSoFar);
+            } else {
+                seatBundles = seatManagers.get(i - 1).findBestSeat(numSeatsAvailable(i));
+                seatsReservedSoFar += numSeatsAvailable(i);
             }
+            returnedSeatBundles.addAll(seatBundles);
+            SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(seatBundles);
+            seatManagers.get(i - 1).updateSeatInfo(seatBundles);
+            updateTicketState(availSeatHold, customerEmail);
         }
-        throw new IllegalArgumentException("None of the requested levels contains enough seats.");
+        SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(returnedSeatBundles);
+        Thread timer = new TimeThread(availSeatHold, returnedSeatBundles, this);
+        threadMap.put(availSeatHold.get().get(0).seatID(), timer);
+        timer.start();
+        return availSeatHold;
     }
 
     /**
@@ -66,6 +89,42 @@ public class MyTicketService implements TicketService{
         return availability[venueLevel - 1];
     }
 
+    /**
+     * Provides method for which level to look for when searching available seats. The function decides what level to look
+     * for and how many levels to look for to provide best seating availability.
+     * @param numSeats number seats to be reserved.
+     * @param minLevel minimum level that customer requires.
+     * @param maxLevel maximum level that customer requires.
+     * @return arraylist of level integer in sorted form.
+     */
+    ArrayList<Integer> findLevelForHold(int numSeats, int minLevel, int maxLevel) {
+        ArrayList<Integer> levelArray = new ArrayList<>();
+        PriorityQueue<Integer> queue = new PriorityQueue<>(4, Collections.reverseOrder());
+        for (int i = minLevel; i <= maxLevel; i++) {
+            if (numSeatsAvailable(i) >= numSeats) {
+                levelArray.add(i);
+                return levelArray;
+            }
+            queue.add(numSeatsAvailable(i));
+        }
+        int seatsAccumulated = 0;
+        while (!queue.isEmpty()) {
+            int temp = queue.poll();
+            for (int i = minLevel; i <= maxLevel; i++) {
+                if (numSeatsAvailable(i) == temp) {
+                    levelArray.add(i);
+                    minLevel = i + 1;
+                    break;
+                }
+            }
+            seatsAccumulated += temp;
+            if (seatsAccumulated >= numSeats) {
+                Collections.sort(levelArray);
+                return levelArray;
+            }
+        }
+        throw new IllegalArgumentException("None of the requested levels contains enough seats.");
+    }
 
     /**
      * Update the parameters in the MyTicketservice object when the ticket is held by findAndHoldSeats.
@@ -83,19 +142,6 @@ public class MyTicketService implements TicketService{
     }
 
     /**
-     * Commit seats held for a specific customer
-     * @param seatHoldId the seat hold identifier
-     * @param customerEmail the email address of the customer to which the seat hold
-    is assigned
-     * @return a reservation confirmation code
-     */
-    public String reserveSeats(int seatHoldId, String customerEmail) {
-        threadMap.get(seatHoldId).interrupt();
-        threadMap.remove((seatHoldId));
-        return Integer.toString(seatHoldId);
-    }
-
-    /**
      * When holded seats are returned to the rowmanagement after expiration of holding time, reaarange needs to be called
      * to combine pieces of seatbundle objects into one if they are adjecent to each other.
      */
@@ -110,7 +156,7 @@ public class MyTicketService implements TicketService{
      * @param seatList
      * @param bundleList
      */
-    public void removeHeldTicket(ArrayList<Seat> seatList, ArrayList<SeatBundle> bundleList) {
+    public synchronized void removeHeldTicket(ArrayList<Seat> seatList, ArrayList<SeatBundle> bundleList) {
         for (int j = 0; j < seatList.size(); j++) {
             Seat tempSeat = seatList.get(j);
             getCustomerInfo().remove(tempSeat.seatID());
@@ -124,7 +170,6 @@ public class MyTicketService implements TicketService{
         rearrange();
         getThreadMap().remove(seatList.get(0).seatID());
     }
-
 
     /**
      * Returns size of each level in int array based on the level.
@@ -141,7 +186,6 @@ public class MyTicketService implements TicketService{
         }
     }
 
-
     /**
      * Returns ticket holding time.
      * @return time that tickets will be held
@@ -149,7 +193,6 @@ public class MyTicketService implements TicketService{
     public static long getTimeWaited() {
         return TIME_WAITED;
     }
-
 
     /**
      * Returns container for customer email object.
@@ -183,7 +226,7 @@ public class MyTicketService implements TicketService{
      * Returns seatManagers which returns Arraylist containing each level's seat information.
      * @return Arraylist of SeatManager for each level.
      */
-    public ArrayList<SeatManager> getSeatManagers() { return seatManagers; }
+    public HashMap<Integer, SeatManager> getSeatManagers() { return seatManagers; }
 
     /**
      * Hashmap contains customer email information. Key represents seatID of the seat that particular customer reserved.
@@ -219,13 +262,13 @@ public class MyTicketService implements TicketService{
      * Default time for holding tickets. If customer does not reserve items after timeWaited value, The ticket will be released.
      * The scale is in milisecond.
      */
-    static final long TIME_WAITED = 100;
+    static final long TIME_WAITED = 1000;
 
     /**
      * seatManagers contains seatManager object for each level. For this case, there are 4 levels, so 4 objects are contained
      * and format is {Orchestra, Main, Balcony1, Balcony2}.
      */
-    ArrayList<SeatManager> seatManagers;
+    HashMap<Integer, SeatManager> seatManagers;
 
 }
 

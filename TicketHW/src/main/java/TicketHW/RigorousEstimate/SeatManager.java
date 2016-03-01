@@ -5,6 +5,7 @@ import TicketHW.SeatHold;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 
 /**
@@ -22,10 +23,10 @@ public class SeatManager {
     public SeatManager(int level, int[] size) {
         levelN = level;
         dimension = size;
-        seatAdjacency = new ArrayList<RowManagement> ();
-        Collections.synchronizedList(seatAdjacency);
+        seatAdjacency = new HashMap<> ();
+        Collections.synchronizedMap(seatAdjacency);
         for (int i = 0; i < size[1]; i ++) {
-            seatAdjacency.add(i, new RowManagement(this, i + 1));
+            seatAdjacency.put(i, new RowManagement(this, i + 1));
         }
     }
 
@@ -113,9 +114,9 @@ public class SeatManager {
      * @param seatBundles Seats to be removed from availability.
      */
     public void updateSeatInfo(ArrayList<SeatBundle> seatBundles) {
-        for (int i = 0; i < seatBundles.size(); i++) {
-            RowManagement.reserveBundle(seatAdjacency.get(seatBundles.get(i).getColumnNumber() - 1),
-                    seatBundles.get(i).getRowNumber(), seatBundles.get(i).getSizeOfBundle());
+        for (SeatBundle seatBundle : seatBundles) {
+            RowManagement.reserveBundle(seatAdjacency.get(seatBundle.getColumnNumber() - 1),
+                    seatBundle.getRowNumber(), seatBundle.getSizeOfBundle());
         }
     }
 
@@ -134,7 +135,7 @@ public class SeatManager {
      * @param columnNumber column number of requested row.
      * @return Rowmanagement for requested column number.
      */
-    public RowManagement getRowManagement(int columnNumber) { return seatAdjacency.get(columnNumber -1); }
+    public RowManagement getRowManagement(int columnNumber) { return seatAdjacency.get(columnNumber - 1); }
 
     /* Returns dimensional information of this level. */
     int[] getDimension() { return dimension; }
@@ -143,7 +144,7 @@ public class SeatManager {
     int getLevelNumber() { return levelN; }
 
     /* Contains Rowmanagement objects for each row. */
-    ArrayList<RowManagement> seatAdjacency;
+    HashMap<Integer, RowManagement> seatAdjacency;
 
     /* level of these seats. */
     int levelN;
