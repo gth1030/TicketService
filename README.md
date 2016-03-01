@@ -25,8 +25,8 @@ The testing can be simply done by creating MyService object. The class can be co
 Ticketing process in the program is separated into two part. On the first part, it looks for one connected seats, that can provide seats for all customers in one seat from the lowest number of column. This part is not absolutely necessary for the program but needed for optimization which will be talked about on second part.
     On second part, the program converts all connected seats as a one token. For example, if first row is empty and the row size is 20, then program takes 20 seats as one token. If one person is seating on second seat of the first row,
 
-X O X X X X X X X X X X X X X X X X X X
-O = customer, X = empty seats
+    X O X X X X X X X X X X X X X X X X X X
+    O = customer, X = empty seats
 
 then the program takes one token of size 1, and another token of size 18. The program takes in all tuples from a single level and put them into the queue. From the queue, the program always takes out biggest tuple first to give largest possible adjacent seat for the customer. Although the part 2 can solely provide best solution the reason for implementing part 1 is that it is often better to leave largest tuple for the future if possible.Example case is this. For empty level 1 with size of 50 seats on row and 25 seats on column, request to reserve 10 seats will provide first 10 seats on the first row. Once these seats are filled let¡¯s say another request of 10 seats comes in. My part2 implementation will still provide consecutive 10 seats since it is available in the level but it will provide seats from 2nd column instead of first column despite of having spaces on the first column. It is often better to fill row by row because it gives better option for future customers to have bigger consecutive seats. With collaboration of both parts, the program will fill out first row first if possible. 
 
