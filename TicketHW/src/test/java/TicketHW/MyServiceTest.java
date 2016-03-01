@@ -1,6 +1,7 @@
 package TicketHW;
 
 import TicketHW.RigorousEstimate.SeatBundle;
+import TicketHW.RigorousEstimate.SeatManager;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -38,8 +39,6 @@ public class MyServiceTest {
         assertEquals(serviceOj1.numSeatsAvailable(4), 1500);
     }
 
-
-
     @Test
     public void reserveSeatsTest() {
         MyTicketService serviceOj1 = new MyTicketService("Test1");
@@ -61,7 +60,7 @@ public class MyServiceTest {
         seatHold.add(new Seat(1, 1, 1));
         seatHold.add(new Seat(1, 3, 1));
         seatHold.add(new Seat(50, 2, 4));
-        serviceOj1.updateTicketState(seatHold, "aa");
+        SeatManager.updateTicketState(seatHold, "aa", serviceOj1);
         assertEquals("aa", serviceOj1.getCustomerInfo().get(1));
         assertEquals(1248, serviceOj1.getAvailability()[0]);
     }
@@ -72,12 +71,10 @@ public class MyServiceTest {
         SeatHold seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
         ArrayList<Seat> seats2 = seatHold.get();
         assertEquals(new Seat(1).seatID(), seats2.get(0).seatID());
-
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
         }
-
         seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
         seats2 = seatHold.get();
         assertEquals(new Seat(1).seatID(), seats2.get(0).seatID());
@@ -97,33 +94,15 @@ public class MyServiceTest {
         seatHold = serviceOj1.findAndHoldSeats(1, 2, 3, "aa");
         seats = seatHold.get();
         assertEquals(new Seat(1251).seatID(), seats.get(0).seatID());
-
         seatHold = serviceOj1.findAndHoldSeats(5, 3, 3, "aa");
         assertEquals(1495, serviceOj1.getAvailability()[2]);
         serviceOj1.reserveSeats(3251, "aa");
         seats = seatHold.get();
         assertEquals(new Seat(3251).seatID(), seats.get(0).seatID());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
         assertEquals(new Seat(3252).seatID(), seats.get(1).seatID());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
         assertEquals(new Seat(3253).seatID(), seats.get(2).seatID());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
         assertEquals(new Seat(3254).seatID(), seats.get(3).seatID());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
         assertEquals(new Seat(3255).seatID(), seats.get(4).seatID());
-
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
@@ -135,8 +114,6 @@ public class MyServiceTest {
         assertEquals(new Seat(1).seatID(), seats2.get(0).seatID());
         assertEquals(new Seat(3251).seatID(), seats.get(0).seatID());
     }
-
-
 
     @Test
     public void findAndHoldSeatsTest3() {
@@ -154,13 +131,10 @@ public class MyServiceTest {
         } catch (InterruptedException e) {
         }
         seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
-
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
         }
-
-
         assertEquals(1250, serviceOj1.getAvailability()[0]);
         seatHold = serviceOj1.findAndHoldSeats(1, 1, 1, "aa");
         assertEquals(1249, serviceOj1.getAvailability()[0]);
@@ -178,9 +152,7 @@ public class MyServiceTest {
         holdings.add(new Seat(1, 1, 1));
         ArrayList<SeatBundle> bundleList = new ArrayList<>();
         bundleList.add(new SeatBundle(1, 1, serviceOj1.getSeatManagers().get(0).getRowManagement(1)));
-        serviceOj1.removeHeldTicket(holdings, bundleList);
+        SeatManager.removeHeldTicket(holdings, bundleList, serviceOj1);
         assertEquals(1, serviceOj1.getSeatManagers().get(0).getRowManagement(1).getRowInfoArray().get(0).getRowNumber());
     }
-
-
 }

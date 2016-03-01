@@ -1,5 +1,6 @@
 package TicketHW;
 
+import TicketHW.RigorousEstimate.SeatManager;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -22,7 +23,7 @@ public class TimeThreadTest {
         seatHold.add(new Seat(1, 1, 1));
         seatHold.add(new Seat(1, 3, 1));
         seatHold.add(new Seat(50, 2, 4));
-        serviceOj1.updateTicketState(seatHold, "aa");
+        SeatManager.updateTicketState(seatHold, "aa", serviceOj1);
         assertEquals("aa", serviceOj1.getCustomerInfo().get(1));
         assertEquals(1248, serviceOj1.getAvailability()[0]);
     }
@@ -41,8 +42,6 @@ public class TimeThreadTest {
         } catch (InterruptedException e) {
         }
         assertEquals(1250, serviceOj1.getAvailability()[0]);
-
-
     }
 
 }

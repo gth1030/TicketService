@@ -1,7 +1,9 @@
 package TicketHW.RigorousEstimate;
 
+import TicketHW.MyTicketService;
 import TicketHW.Seat;
 import TicketHW.SeatHold;
+import TicketHW.TimeThread;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +22,7 @@ public class SeatManager {
      * @param level level of these seats.
      * @param size Two dimensional size of the seats in this level. Format is {row size, column size}.
      */
-    public SeatManager(int level, int[] size) {
+    public SeatManager(int level, int[] size, MyTicketService parentTicketService) {
         levelN = level;
         dimension = size;
         seatAdjacency = new HashMap<> ();
@@ -28,7 +30,15 @@ public class SeatManager {
         for (int i = 0; i < size[1]; i ++) {
             seatAdjacency.put(i, new RowManagement(this, i + 1));
         }
+        ticketService = parentTicketService;
     }
+
+    /* The Constructor is for testing purpose, do not use */
+    public SeatManager(int level, int[] size) {
+        this(level, size, null);
+    }
+
+
 
     /**
      * The function returns best available seats in this level in form of arraylist of seatbundle. The mechanism is
@@ -131,6 +141,81 @@ public class SeatManager {
     }
 
     /**
+     * RemoveHold function removes held tickets back to availability and updates all information accordingly.
+     * @param seatList Contains information of seats to be removed as an individual collection.
+     * @param bundleList Contains information of seats to be removed in bundle form
+     * @param  myTicketService  myTicketserve under operation.
+     */
+    public static synchronized void removeHeldTicket(ArrayList<Seat> seatList, ArrayList<SeatBundle> bundleList,
+                                              MyTicketService myTicketService) {
+        for (int j = 0; j < seatList.size(); j++) {
+            Seat tempSeat = seatList.get(j);
+            myTicketService.getCustomerInfo().remove(tempSeat.seatID());
+            myTicketService.getAvailability() [tempSeat.seatInfo()[2] - 1]++;
+            myTicketService.getSeatManagers().get(tempSeat.seatInfo() [2]).getRowManagement(tempSeat.seatInfo()[1]).add(tempSeat);
+        }
+        for (int i = 0; i < bundleList.size(); i++) {
+            myTicketService.getSeatManagers().get(bundleList.get(i).getLevel() - 1).getRowManagement(bundleList.
+                    get(i).getColumnNumber()).add(bundleList.get(i));
+        }
+        myTicketService.rearrange();
+        myTicketService.getThreadMap().remove(seatList.get(0).seatID());
+    }
+
+    /**
+     * Find and hold the best available seats for a customer. Throw illegal argument exception if none of the level has
+     * enough spaces in a single level.
+     *
+     * @param numSeats the number of seats to find and hold
+     * @param minLevel the minimum venue level
+     * @param maxLevel the maximum venue level
+     * @param customerEmail unique identifier for the customer
+     * @param myTicketService Myticketservice to hold seats.
+     * @return a SeatHold object identifying the specific seats and related
+    information
+     */
+    public static SeatHold findAndHoldSeats(int numSeats, int minLevel,
+                                     int maxLevel, String customerEmail, MyTicketService myTicketService) {
+        ArrayList<Integer> levelToIterate = myTicketService.findLevelForHold(numSeats, minLevel, maxLevel);
+        ArrayList<SeatBundle> returnedSeatBundles = new ArrayList<>();
+        int seatsReservedSoFar = 0;
+        for (int i : levelToIterate) {
+            ArrayList<SeatBundle> seatBundles = null;
+            if (i == levelToIterate.get(levelToIterate.size() - 1)) {
+                seatBundles = myTicketService.getSeatManagers().get(i - 1).findBestSeat(numSeats - seatsReservedSoFar);
+            } else {
+                seatBundles = myTicketService.getSeatManagers().get(i - 1).findBestSeat(myTicketService.getAvailability() [i]);
+                seatsReservedSoFar += myTicketService.getAvailability() [i];
+            }
+            returnedSeatBundles.addAll(seatBundles);
+            SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(seatBundles);
+            myTicketService.getSeatManagers().get(i - 1).updateSeatInfo(seatBundles);
+            updateTicketState(availSeatHold, customerEmail, myTicketService);
+        }
+        SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(returnedSeatBundles);
+        TimeThread timer = new TimeThread(availSeatHold, returnedSeatBundles, myTicketService);
+        myTicketService.getThreadMap().put(availSeatHold.get().get(0).seatID(), timer);
+        timer.start();
+        return availSeatHold;
+    }
+
+    /**
+     * Update the parameters in the MyTicketservice object when the ticket is held by findAndHoldSeats.
+     * @param seatHold Seats that are newly held by request
+     * @param customerEmail customer e-mail.
+     * @param  myTicketService myTicketService under operation
+     */
+    public static void updateTicketState(SeatHold seatHold, String customerEmail, MyTicketService myTicketService) {
+        ArrayList<Seat> seatSet = seatHold.get();
+        seatHold.setSeatHoldID(seatSet.get(0).seatID());
+        for (int j = 0; j < seatSet.size(); j++) {
+            Seat tempSeat = seatSet.get(j);
+            myTicketService.getCustomerInfo().put(tempSeat.seatID(), customerEmail);
+            myTicketService.getAvailability() [tempSeat.seatInfo()[2] - 1]--;
+        }
+    }
+
+    /**
      * Returns rowmanagement object for each row.
      * @param columnNumber column number of requested row.
      * @return Rowmanagement for requested column number.
@@ -151,4 +236,7 @@ public class SeatManager {
 
     /* Dimension of this level. Format is {number of rows, number of columns}. */
     int[] dimension;
+
+    /* Pointer to parent */
+    MyTicketService ticketService;
 }

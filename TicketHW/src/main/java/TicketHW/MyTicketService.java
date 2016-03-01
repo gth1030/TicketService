@@ -1,11 +1,13 @@
 /**
  * Created by kitae on 2016-02-26.
- * Main frame for ticket reservation system.
+ * Main frame for ticket reservation system. A single myTicketService class can handle all of required functions for
+ * ticketing. Once myticketservice is created, ticket reservation request can be easily be held and the class takes care
+ * of selecting best seats, hold seats, reserve seats, and release seats once time is expired. The class is multi thread
+ * safe for multiple booking process.
  */
 
 package TicketHW;
 
-import TicketHW.RigorousEstimate.SeatBundle;
 import TicketHW.RigorousEstimate.SeatManager;
 
 import java.util.*;
@@ -59,27 +61,7 @@ public class MyTicketService implements TicketService{
      */
     public SeatHold findAndHoldSeats(int numSeats, int minLevel,
                                      int maxLevel, String customerEmail) {
-        ArrayList<Integer> levelToIterate = findLevelForHold(numSeats, minLevel, maxLevel);
-        ArrayList<SeatBundle> returnedSeatBundles = new ArrayList<>();
-        int seatsReservedSoFar = 0;
-        for (int i : levelToIterate) {
-            ArrayList<SeatBundle> seatBundles = null;
-            if (i == levelToIterate.get(levelToIterate.size() - 1)) {
-                seatBundles = seatManagers.get(i - 1).findBestSeat(numSeats - seatsReservedSoFar);
-            } else {
-                seatBundles = seatManagers.get(i - 1).findBestSeat(numSeatsAvailable(i));
-                seatsReservedSoFar += numSeatsAvailable(i);
-            }
-            returnedSeatBundles.addAll(seatBundles);
-            SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(seatBundles);
-            seatManagers.get(i - 1).updateSeatInfo(seatBundles);
-            updateTicketState(availSeatHold, customerEmail);
-        }
-        SeatHold availSeatHold = SeatManager.convertSeatBundleToSeatHold(returnedSeatBundles);
-        TimeThread timer = new TimeThread(availSeatHold, returnedSeatBundles, this);
-        threadMap.put(availSeatHold.get().get(0).seatID(), timer);
-        timer.start();
-        return availSeatHold;
+        return SeatManager.findAndHoldSeats(numSeats, minLevel, maxLevel, customerEmail, this);
     }
 
     /**
@@ -99,7 +81,7 @@ public class MyTicketService implements TicketService{
      * @param maxLevel maximum level that customer requires.
      * @return arraylist of level integer in sorted form.
      */
-    ArrayList<Integer> findLevelForHold(int numSeats, int minLevel, int maxLevel) {
+    public ArrayList<Integer> findLevelForHold(int numSeats, int minLevel, int maxLevel) {
         ArrayList<Integer> levelArray = new ArrayList<>();
         PriorityQueue<Integer> queue = new PriorityQueue<>(4, Collections.reverseOrder());
         for (int i = minLevel; i <= maxLevel; i++) {
@@ -128,24 +110,11 @@ public class MyTicketService implements TicketService{
         throw new IllegalArgumentException("None of the requested levels contains enough seats.");
     }
 
-    /**
-     * Update the parameters in the MyTicketservice object when the ticket is held by findAndHoldSeats.
-     * @param seatHold Seats that are newly held by request
-     * @param customerEmail customer e-mail.
-     */
-    void updateTicketState(SeatHold seatHold, String customerEmail) {
-        ArrayList<Seat> seatSet = seatHold.get();
-        seatHold.setSeatHoldID(seatSet.get(0).seatID());
-        for (int j = 0; j < seatSet.size(); j++) {
-            Seat tempSeat = seatSet.get(j);
-            customerInfo.put(tempSeat.seatID(), customerEmail);
-            availability[tempSeat.seatInfo()[2] - 1]--;
-        }
-    }
 
     /**
-     * When holded seats are returned to the rowmanagement after expiration of holding time, reaarange needs to be called
-     * to combine pieces of seatbundle objects into one if they are adjecent to each other.
+     * Whenever held seats are returned to the rowmanagement due to expiration of holding time, reaarange needs to be called
+     * to combine pieces of seatbundle objects into one if they are adjecent to each other. Calling rearrange on myticket
+     * service level will rearrange every row in the entire system.
      */
     public void rearrange() {
         for (int i = 0; i < seatManagers.size(); i ++) {
@@ -153,25 +122,6 @@ public class MyTicketService implements TicketService{
         }
     }
 
-    /**
-     * RemoveHold function removes held tickets back to availability and updates all information accordingly.
-     * @param seatList
-     * @param bundleList
-     */
-    public synchronized void removeHeldTicket(ArrayList<Seat> seatList, ArrayList<SeatBundle> bundleList) {
-        for (int j = 0; j < seatList.size(); j++) {
-            Seat tempSeat = seatList.get(j);
-            getCustomerInfo().remove(tempSeat.seatID());
-            getAvailability() [tempSeat.seatInfo()[2] - 1]++;
-            getSeatManagers().get(tempSeat.seatInfo() [2]).getRowManagement(tempSeat.seatInfo()[1]).add(tempSeat);
-        }
-        for (int i = 0; i < bundleList.size(); i++) {
-            getSeatManagers().get(bundleList.get(i).getLevel() - 1).getRowManagement(bundleList.
-                    get(i).getColumnNumber()).add(bundleList.get(i));
-        }
-        rearrange();
-        getThreadMap().remove(seatList.get(0).seatID());
-    }
 
     /**
      * Returns size of each level in int array based on the level.
@@ -272,9 +222,7 @@ public class MyTicketService implements TicketService{
      */
     HashMap<Integer, SeatManager> seatManagers;
 
-    /**
-     * Saved Reservations.
-     */
+    /* Saved Reservations. */
     HashMap<Integer, ArrayList<Seat>> reservations;
 }
 

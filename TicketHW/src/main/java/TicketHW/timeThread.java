@@ -1,6 +1,8 @@
 package TicketHW;
 
 import TicketHW.RigorousEstimate.SeatBundle;
+import TicketHW.RigorousEstimate.SeatManager;
+
 import java.util.ArrayList;
 
 
@@ -46,7 +48,7 @@ public class TimeThread extends Thread{
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                service.removeHeldTicket(holdings, bundleList);
+                SeatManager.removeHeldTicket(holdings, bundleList, service);
             }
         });
         thread.start();
