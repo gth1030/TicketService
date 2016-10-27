@@ -43,3 +43,11 @@ These are some simple logics implemented in the program. Again, row number is co
 # Possible improvement
 There are few possible improvements for the current algorithm. One possible improvement can be done by distance calculation among seats. Current implementation does not consider the distance between seats when the customer has to be split. 
 For example, when customer request seat of 9, and there is no availability for all 9 people to seat together, then program seeks for next best availability. If there is only one place where the program can fit 7 people and there are 2 places where the program can fit 2 people. Then program will randomly choose one of two places for 2 people regardless of the distance between 2 people and 7 people. However, with correct geometry information, it is possible to incorporate distance information very easily in the program. Once the geometric information is filled in for each seat in 3D spaces, by adding cases for compareTo method when two objects have same seat size, the factor can easily be incorporated. 
+
+# Copyright (c) 2016 Kitae Kim
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
